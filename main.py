@@ -1,48 +1,66 @@
 import argparse
 import os
-import whois
 import datetime
+from whois_info import *
+from utils import *
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-l", nargs='?', default="empty")
-    parser.add_argument("-i", nargs='?', default="empty")
-
-    args = parser.parse_args()
+    args = setup_argparse()
 
     # check if single IP or list of IPs
+    # multiple IP implementation
     if(args.l != 'empty'):
         print("Multiple IP case")
     elif(args.i != 'emtpy'):
         print("Single IP case")
-        check_whois(args.i)
+        check_whois_for_ip(args.i)
+        reverse_lookup(args.i)
     else:
         print('Something went wrong')
         exit()
 
-    exit()
+def setup_argparse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-l", nargs='?', default="empty")
+    parser.add_argument("-i", nargs='?', default="empty")
+    return parser.parse_args()
 
-def check_whois(ip):
-    print('ip is ' + str(ip))
-    domain = whois.whois(str(ip))
+# gets all domains corresponding to the IP
+def reverse_lookup(ip):
+    print('--------------------------------')
+    print('DNS Info')
+    print('--------------------------------')
 
-    print('[+] Whois org for ' + str(ip))
-    print('\t' + domain['org'])
+    try:
+        data = socket.gethostbyaddr(ip)
+        domain = data[0]
+        print('[+] Domain name is ' + domain)
+    except Exception as e:
+        print('[-] IP provided does not resolve')
+    print('\n')
 
-    print('[+] Whois country for ' + str(ip))
-    print('\t' + domain['country'])
+'''
+    try:
+        data = socket.gethostbyaddr(ip)
+        for domain in data:
+            hostname = str(domain)
+            if 'in-addr.arpa' not in hostname and not check_ip_validity(hostname):
+                print('[+] Domain name is ' + hostname)
+    except Exception as e:
+        print('[-] IP provided does not resolve')
+    print('\n')
+'''
+# return true if valid, false if not
+def check_ip_validity(ip):
+    try:
+        socket.inet_aton(ip)
+        # legal
+        return True
+    except socket.error:
+        # Not legal
+        return False
 
-    print('[+] Whois registrar for ' + str(ip))
-    print('\t' + domain['registrar'])
 
-    print('[+] Whois create date for ' + str(ip))
-    print('\t' + domain['creation_date'].strftime("%B %d, %Y"))
-
-    # can have multiple dates, parse the first for now
-    print('[+] Whois record update dates for ' + str(ip))
-    for date in domain['updated_date']:
-        print('\t' + date.strftime("%B %d, %Y"))
-    exit()
 
 if __name__ == '__main__':
     main()
